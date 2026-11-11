@@ -7,7 +7,7 @@ import useCurrentUser from "@/hooks/useCurrentUser";
 import { MEMO_COMMENTS_ANCHOR_ID } from "@/lib/memo-comments";
 import { extractMemoIdFromName } from "@/lib/resource-names";
 import { State } from "@/types/proto/api/common_pb";
-import type { Memo } from "@/types/proto/api/memo_service_pb";
+import { type Memo, Visibility } from "@/types/proto/api/memo_service_pb";
 import { useTranslate } from "@/utils/i18n";
 
 interface Props {
@@ -103,7 +103,11 @@ const MemoCommentSection = forwardRef<MemoCommentSectionHandle, Props>(
           {showEditor && (
             <div className="w-full mb-2">
               <MemoEditor
-                draft={{ parent: memo.name }}
+                draft={{
+                  parent: memo.name,
+                  space: memo.visibility === Visibility.SPACE ? memo.space : undefined,
+                  visibility: memo.visibility === Visibility.SPACE ? Visibility.SPACE : undefined,
+                }}
                 placeholder={t("editor.add-your-comment-here")}
                 autoFocus
                 onConfirm={handleCommentCreated}

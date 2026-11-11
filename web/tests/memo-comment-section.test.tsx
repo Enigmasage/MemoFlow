@@ -4,7 +4,7 @@ import { act, createRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import MemoCommentSection, { type MemoCommentSectionHandle } from "@/components/MemoCommentSection";
 import { State } from "@/types/proto/api/common_pb";
-import { MemoSchema } from "@/types/proto/api/memo_service_pb";
+import { MemoSchema, Visibility } from "@/types/proto/api/memo_service_pb";
 
 const mocks = vi.hoisted(() => ({
   currentUser: { name: "users/alice" } as { name: string } | undefined,
@@ -12,8 +12,14 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/components/MemoEditor", () => ({
   preloadMemoEditing: () => Promise.resolve(),
-  MemoEditor: ({ autoFocus, draft }: { autoFocus?: boolean; draft: { parent?: string } }) => (
-    <div data-testid="comment-editor" data-auto-focus={autoFocus} data-parent-memo-name={draft.parent}>
+  MemoEditor: ({ autoFocus, draft }: { autoFocus?: boolean; draft: { parent?: string; space?: string; visibility?: Visibility } }) => (
+    <div
+      data-testid="comment-editor"
+      data-auto-focus={autoFocus}
+      data-parent-memo-name={draft.parent}
+      data-space={draft.space}
+      data-visibility={draft.visibility}
+    >
       <textarea aria-label="Comment editor" />
     </div>
   ),
@@ -73,6 +79,24 @@ describe("MemoCommentSection", () => {
       await ref.current?.openEditor();
     });
     expect(screen.getByRole("textbox", { name: "Comment editor" })).toHaveFocus();
+  });
+
+  it("seeds comments on a shared memo with its durable Space audience", async () => {
+    const memo = create(MemoSchema, {
+      name: "memos/shared",
+      creator: "users/alice",
+      state: State.NORMAL,
+      space: "spaces/team",
+      visibility: Visibility.SPACE,
+    });
+
+    render(<MemoCommentSection memo={memo} comments={[]} />);
+    await act(async () => {
+      screen.getByRole("button", { name: /memo.comment.write-a-comment/ }).click();
+    });
+
+    expect(screen.getByTestId("comment-editor")).toHaveAttribute("data-space", "spaces/team");
+    expect(screen.getByTestId("comment-editor")).toHaveAttribute("data-visibility", String(Visibility.SPACE));
   });
 
   it("uses the supplied total instead of the currently loaded page length", () => {

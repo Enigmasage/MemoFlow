@@ -103,14 +103,16 @@ export const collectionNavigationPath = (
   const creator =
     route.pathname === ROUTES.EXPLORE
       ? undefined
-      : ((route.isCollection ? getCollectionCreator(location.search) : undefined) ??
-        (!route.isCollection || route.pathname === ROUTES.HOME ? currentUsername : undefined));
+      : route.spaceName
+        ? getCollectionCreator(location.search)
+        : ((route.isCollection ? getCollectionCreator(location.search) : undefined) ??
+          (!route.isCollection || route.pathname === ROUTES.HOME ? currentUsername : undefined));
   const filter = route.isCollection ? new URLSearchParams(location.search).get("filter") : null;
   const search = filter ? new URLSearchParams({ filter }).toString() : "";
   // A memo list without a creator is Explore; this also sends guests there from any page.
   if (pathname === ROUTES.HOME) {
-    const home = buildCollectionPath(creator ? ROUTES.HOME : ROUTES.EXPLORE, route.spaceName);
-    return `${home}${withCollectionCreator(search, creator === currentUsername ? undefined : creator)}`;
+    const home = buildCollectionPath(route.spaceName ? ROUTES.HOME : creator ? ROUTES.HOME : ROUTES.EXPLORE, route.spaceName);
+    return `${home}${withCollectionCreator(search, creator === currentUsername && !route.spaceName ? undefined : creator)}`;
   }
   return `${collectionPathForLocation(pathname, location.pathname)}${withCollectionCreator(search, creator)}`;
 };
@@ -124,7 +126,10 @@ export const getCreatorSwitchPath = (
   const route = resolveCollectionRoute(location.pathname);
   const isMemoList = route.pathname === ROUTES.HOME || route.pathname === ROUTES.EXPLORE || !route.isCollection;
   const pathname = isMemoList ? buildCollectionPath(username ? ROUTES.HOME : ROUTES.EXPLORE, route.spaceName) : location.pathname;
-  const creator = username === currentUsername && isMemoList ? undefined : username;
+  // Global Home represents the signed-in creator without a query parameter.
+  // A Space Home represents every readable member, so selecting the current
+  // creator there must remain an explicit filter.
+  const creator = username === currentUsername && isMemoList && !route.spaceName ? undefined : username;
   return `${pathname}${withCollectionCreator(location.search, creator)}${location.hash || ""}`;
 };
 

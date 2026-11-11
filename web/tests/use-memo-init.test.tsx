@@ -116,6 +116,17 @@ describe("the initial draft and useMemoInit", () => {
     expect(getEditorState().metadata.visibility).toBe(Visibility.PRIVATE);
   });
 
+  it("fixes a Space-hosted draft to the Space audience by default", () => {
+    const state = initialEditorState({
+      draftKey,
+      defaultSpace: "spaces/team",
+      defaultVisibility: Visibility.SPACE,
+    });
+
+    expect(state.metadata.space).toBe("spaces/team");
+    expect(state.metadata.visibility).toBe(Visibility.SPACE);
+  });
+
   it("restores uploaded attachment bindings with a new memo draft", () => {
     const attachment = create(AttachmentSchema, { name: "attachments/image-one", filename: "image.png", type: "image/png" });
     cacheService.saveNow(draftKey, { content: "![image](/file/attachments/image-one)", attachments: [attachment] });

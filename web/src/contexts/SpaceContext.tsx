@@ -44,10 +44,11 @@ export function SpaceProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const route = resolveCollectionRoute(location.pathname);
   const selectedSpaceName = route.spaceName;
+  const explicitCreator = getCollectionCreator(location.search);
   const creatorUsername = route.isCollection
     ? route.pathname === ROUTES.EXPLORE
       ? undefined
-      : (getCollectionCreator(location.search) ?? (route.pathname === ROUTES.HOME ? user?.username : undefined))
+      : (explicitCreator ?? (!selectedSpaceName && route.pathname === ROUTES.HOME ? user?.username : undefined))
     : undefined;
   const spacesQuery = useSpaces(userName);
   const spaceQuery = useSpace(userName, selectedSpaceName);

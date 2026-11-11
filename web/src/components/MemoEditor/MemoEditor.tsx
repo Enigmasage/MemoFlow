@@ -4,7 +4,7 @@ import useCurrentUser from "@/hooks/useCurrentUser";
 import { useMemoByName, useUpdateMemo } from "@/hooks/useMemoQueries";
 import type { MemoSuggestion } from "@/lib/memo-suggestions";
 import { cn } from "@/lib/utils";
-import type { Location } from "@/types/proto/api/memo_service_pb";
+import { type Location, Visibility } from "@/types/proto/api/memo_service_pb";
 import { lazyWithReload } from "@/utils/lazy";
 import { convertVisibilityFromString } from "@/utils/memo";
 import { canManageMemo } from "@/utils/user";
@@ -49,15 +49,17 @@ export interface MemoEditorViewProps {
 
 /** What a new memo or comment starts from. */
 export interface MemoDraftSeed {
-  /** The memo this draft comments on. A comment has no scope, Space or timestamps of its own. */
+  /** The memo this draft comments on. */
   parent?: string;
   /**
    * Where a new memo is composed, such as `home`, `global`, `calendar:<date>` or
    * `map:<key>`. Each scope keeps its own draft, per Space.
    */
   scope?: string;
-  /** Fixes the new memo's Space; the Space chooser is then off. */
+  /** Fixes the new memo or comment's Space; the Space chooser is then off. */
   space?: string;
+  /** Overrides the account's default audience for this draft. */
+  visibility?: Visibility;
   /** Seeds the location once; a restored draft wins. */
   location?: Location;
   /**
@@ -183,6 +185,7 @@ const MemoEditorDraft = ({ draft, ...editing }: MemoEditorDraftProps) => {
         identity={identity}
         parentMemoName={draft.parent}
         defaultSpace={draft.space}
+        defaultVisibility={draft.visibility}
         defaultLocation={draft.location}
         defaultCreateTime={draft.createTime}
         {...editing}
@@ -196,6 +199,7 @@ interface EditingSessionProps extends MemoEditingProps {
   memo?: Parameters<typeof initialEditorState>[0]["memo"];
   parentMemoName?: string;
   defaultSpace?: string;
+  defaultVisibility?: Visibility;
   defaultLocation?: Location;
   defaultCreateTime?: Date;
 }
@@ -206,6 +210,7 @@ const EditingSession = ({
   memo,
   parentMemoName,
   defaultSpace,
+  defaultVisibility,
   defaultLocation,
   defaultCreateTime,
   ...editing
@@ -214,6 +219,13 @@ const EditingSession = ({
   const { userGeneralSetting } = useAuth();
   const username = currentUser?.name ?? "";
   const draftKey = cacheService.key(username, draftKeyFor(identity));
+  const fallbackVisibility =
+    defaultVisibility ??
+    (defaultSpace
+      ? Visibility.SPACE
+      : userGeneralSetting?.memoVisibility
+        ? convertVisibilityFromString(userGeneralSetting.memoVisibility)
+        : undefined);
   const [initialState] = useState(() => {
     migrateLegacyDraft(username, identity);
     return initialEditorState({
@@ -221,7 +233,8 @@ const EditingSession = ({
       draftKey,
       // A hosted editor starts in focus mode and stays there.
       initialFocusMode: Boolean(editing.onFocusModeExit),
-      defaultVisibility: userGeneralSetting?.memoVisibility ? convertVisibilityFromString(userGeneralSetting.memoVisibility) : undefined,
+      defaultVisibility: fallbackVisibility,
+      defaultSpace,
       defaultCreateTime,
       defaultLocation,
       canChooseSpace: canChooseSpaceFor({ memo, currentUser, parentMemoName, defaultSpace }),
@@ -234,6 +247,7 @@ const EditingSession = ({
         memo={memo}
         parentMemoName={parentMemoName}
         defaultSpace={defaultSpace}
+        defaultVisibility={fallbackVisibility}
         defaultCreateTime={defaultCreateTime}
         draftKey={draftKey}
         {...editing}

@@ -6,10 +6,10 @@ import { memoService } from "./services/memoService";
 import { createInitialState, type EditorState } from "./state/types";
 
 /**
- * Whether a session may place the memo in a Space of its own. Replies are never placed
- * independently: a comment's Space is its parent's. An edited top-level memo can change
- * its Space; a new one can unless its host fixes the target, such as composing inside a
- * Space.
+ * Whether a session may choose a Space. A comment host may fix the parent
+ * Space, but comments never expose the chooser themselves. An edited
+ * top-level memo can change its Space; a new one can unless its host fixes the
+ * target, such as composing inside a Space.
  */
 export const canChooseSpaceFor = ({
   memo,
@@ -30,9 +30,10 @@ export interface InitialEditorStateOptions {
   draftKey: string;
   initialFocusMode?: boolean;
   defaultVisibility?: Visibility;
+  defaultSpace?: string;
   defaultCreateTime?: Date;
   defaultLocation?: Location;
-  /** Whether the draft may carry a Space of its own; a comment's Space is its parent's. */
+  /** Whether the draft may choose its own Space. */
   canChooseSpace?: boolean;
 }
 
@@ -47,6 +48,7 @@ export function initialEditorState({
   draftKey,
   initialFocusMode = false,
   defaultVisibility,
+  defaultSpace,
   defaultCreateTime,
   defaultLocation,
   canChooseSpace = false,
@@ -66,7 +68,7 @@ export function initialEditorState({
       attachments: draft.attachments.length > 0 ? draft.attachments : base.metadata.attachments,
       location: draft.location === null ? undefined : (draft.location ?? defaultLocation),
       visibility,
-      space: canChooseSpace ? draft.space : undefined,
+      space: defaultSpace ?? (canChooseSpace ? draft.space : undefined),
     },
     timestamps: defaultCreateTime ? { createTime: defaultCreateTime, updateTime: defaultCreateTime } : base.timestamps,
   };

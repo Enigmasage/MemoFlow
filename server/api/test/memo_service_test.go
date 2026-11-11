@@ -1391,3 +1391,139 @@ func TestCreateMemoWithCustomTimestamps(t *testing.T) {
 	require.NotNil(t, memoWithoutTimestamps.UpdateTime, "update_time should be auto-generated")
 	require.True(t, time.Now().Unix()-memoWithoutTimestamps.CreateTime.AsTime().Unix() < 5, "create_time should be recent (within 5 seconds)")
 }
+
+func TestSharedSpaceMemoCollaboration(t *testing.T) {
+	ctx := context.Background()
+	ts := NewTestService(t)
+	defer ts.Cleanup()
+
+	owner, err := ts.CreateHostUser(ctx, "admin-collab-user")
+	require.NoError(t, err)
+	member, err := ts.CreateRegularUser(ctx, "member-collab-user")
+	require.NoError(t, err)
+	outsider, err := ts.CreateRegularUser(ctx, "outsider-collab-user")
+	require.NoError(t, err)
+
+	ownerCtx := ts.CreateUserContext(ctx, owner.ID)
+	memberCtx := ts.CreateUserContext(ctx, member.ID)
+	outsiderCtx := ts.CreateUserContext(ctx, outsider.ID)
+
+	space, err := ts.Service.CreateSpace(ownerCtx, &apipb.CreateSpaceRequest{
+		SpaceId: "collab-space",
+		Space:   &apipb.Space{Title: "Collaboration Space"},
+	})
+	require.NoError(t, err)
+
+	invitation, err := ts.Service.CreateSpaceInvitation(ownerCtx, &apipb.CreateSpaceInvitationRequest{
+		Parent: space.Name,
+		SpaceInvitation: &apipb.SpaceInvitation{
+			Invitee: "users/" + member.Username,
+			Role:    apipb.SpaceMember_ADMIN,
+		},
+	})
+	require.NoError(t, err)
+	_, err = ts.Service.AcceptSpaceInvitation(memberCtx, &apipb.AcceptSpaceInvitationRequest{Name: invitation.Name})
+	require.NoError(t, err)
+
+	ownerShared, err := ts.Service.CreateMemo(ownerCtx, &apipb.CreateMemoRequest{
+		Memo: &apipb.Memo{
+			Content:    "owner shared",
+			Visibility: apipb.Visibility_SPACE,
+			Space:      &space.Name,
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, space.Name, ownerShared.GetSpace())
+
+	ownerPrivate, err := ts.Service.CreateMemo(ownerCtx, &apipb.CreateMemoRequest{
+		Memo: &apipb.Memo{
+			Content:    "owner private",
+			Visibility: apipb.Visibility_PRIVATE,
+			Space:      &space.Name,
+		},
+	})
+	require.NoError(t, err)
+
+	spaceFilter := fmt.Sprintf(`space == %q`, space.Name)
+	memberFeed, err := ts.Service.ListMemos(memberCtx, &apipb.ListMemosRequest{
+		Filter: spaceFilter,
+	})
+	require.NoError(t, err)
+	require.Equal(t, []string{ownerShared.Name}, memoNames(memberFeed.Memos), "a member sees the shared memo but not another member's private memo")
+
+	memberShared, err := ts.Service.CreateMemo(memberCtx, &apipb.CreateMemoRequest{Memo: &apipb.Memo{
+		Content: "member shared", Visibility: apipb.Visibility_SPACE, Space: &space.Name,
+	}})
+	require.NoError(t, err)
+	memberPrivate, err := ts.Service.CreateMemo(memberCtx, &apipb.CreateMemoRequest{Memo: &apipb.Memo{
+		Content: "member private", Visibility: apipb.Visibility_PRIVATE, Space: &space.Name,
+	}})
+	require.NoError(t, err)
+
+	ownerFeed, err := ts.Service.ListMemos(ownerCtx, &apipb.ListMemosRequest{
+		Filter: spaceFilter,
+	})
+	require.NoError(t, err)
+	require.ElementsMatch(t, []string{ownerShared.Name, memberShared.Name, ownerPrivate.Name}, memoNames(ownerFeed.Memos))
+
+	memberFeed, err = ts.Service.ListMemos(memberCtx, &apipb.ListMemosRequest{
+		Filter: spaceFilter,
+	})
+	require.NoError(t, err)
+	require.ElementsMatch(t, []string{ownerShared.Name, memberShared.Name, memberPrivate.Name}, memoNames(memberFeed.Memos))
+
+	_, err = ts.Service.GetMemo(memberCtx, &apipb.GetMemoRequest{Name: ownerPrivate.Name})
+	require.Equal(t, codes.PermissionDenied, status.Code(err), "Space membership must not grant access to a PRIVATE memo")
+
+	_, err = ts.Service.ListMemos(outsiderCtx, &apipb.ListMemosRequest{
+		Filter: spaceFilter,
+	})
+	require.Equal(t, codes.NotFound, status.Code(err), "a non-member cannot use the Space as a collection scope")
+
+	memberComment, err := ts.Service.CreateMemoComment(memberCtx, &apipb.CreateMemoCommentRequest{
+		Parent:  ownerShared.Name,
+		Comment: &apipb.Memo{Content: "member shared comment"},
+	})
+	require.NoError(t, err)
+	require.Equal(t, space.Name, memberComment.GetSpace())
+	require.Equal(t, apipb.Visibility_SPACE, memberComment.Visibility)
+
+	privateComment, err := ts.Service.CreateMemoComment(ownerCtx, &apipb.CreateMemoCommentRequest{
+		Parent:  ownerShared.Name,
+		Comment: &apipb.Memo{Content: "owner private comment", Visibility: apipb.Visibility_PRIVATE},
+	})
+	require.NoError(t, err)
+	require.Empty(t, privateComment.GetSpace())
+	require.Equal(t, apipb.Visibility_PRIVATE, privateComment.Visibility)
+
+	ownerComment, err := ts.Service.CreateMemoComment(ownerCtx, &apipb.CreateMemoCommentRequest{
+		Parent:  memberShared.Name,
+		Comment: &apipb.Memo{Content: "owner shared comment"},
+	})
+	require.NoError(t, err)
+	require.Equal(t, space.Name, ownerComment.GetSpace())
+	require.Equal(t, apipb.Visibility_SPACE, ownerComment.Visibility)
+
+	ownerComments, err := ts.Service.ListMemoComments(ownerCtx, &apipb.ListMemoCommentsRequest{Parent: ownerShared.Name})
+	require.NoError(t, err)
+	require.ElementsMatch(t, []string{memberComment.Name, privateComment.Name}, memoNames(ownerComments.Comments))
+
+	memberComments, err := ts.Service.ListMemoComments(memberCtx, &apipb.ListMemoCommentsRequest{Parent: ownerShared.Name})
+	require.NoError(t, err)
+	require.Equal(t, []string{memberComment.Name}, memoNames(memberComments.Comments), "another member sees the shared comment but not the explicit private comment")
+
+	memberOwnComments, err := ts.Service.ListMemoComments(memberCtx, &apipb.ListMemoCommentsRequest{Parent: memberShared.Name})
+	require.NoError(t, err)
+	require.Equal(t, []string{ownerComment.Name}, memoNames(memberOwnComments.Comments))
+
+	_, err = ts.Service.ListMemoComments(outsiderCtx, &apipb.ListMemoCommentsRequest{Parent: ownerShared.Name})
+	require.Equal(t, codes.PermissionDenied, status.Code(err))
+}
+
+func memoNames(memos []*apipb.Memo) []string {
+	names := make([]string, 0, len(memos))
+	for _, memo := range memos {
+		names = append(names, memo.Name)
+	}
+	return names
+}

@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/usememos/memos/internal/ratelimit"
 	apipb "github.com/usememos/memos/proto/gen/api"
@@ -57,7 +58,30 @@ func (s *APIService) CreateMemoComment(ctx context.Context, request *apipb.Creat
 	if memoUID == relatedMemo.UID {
 		return nil, status.Error(codes.InvalidArgument, "a memo cannot comment on itself")
 	}
-	prepared, err := s.prepareMemoCreate(ctx, user, request.Comment, memoUID)
+
+	commentInput := request.Comment
+	// An unspecified comment on a Space-audience memo should join the same
+	// collaboration boundary. Persist the inherited placement and audience on
+	// the comment row itself; the COMMENT relation still grants no access. An
+	// explicitly PRIVATE comment remains private.
+	if relatedMemo.Visibility == store.SpaceAudience &&
+		relatedMemo.SpaceID != nil &&
+		commentInput.GetSpace() == "" &&
+		(commentInput.Visibility == apipb.Visibility_VISIBILITY_UNSPECIFIED || commentInput.Visibility == apipb.Visibility_SPACE) {
+		space, err := s.Store.GetSpace(ctx, &store.FindSpace{ID: relatedMemo.SpaceID})
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to get parent space: %v", err)
+		}
+		if space == nil {
+			return nil, status.Error(codes.FailedPrecondition, "parent memo space is no longer available")
+		}
+		commentInput = proto.Clone(commentInput).(*apipb.Memo)
+		spaceName := buildSpaceName(space.UID)
+		commentInput.Space = &spaceName
+		commentInput.Visibility = apipb.Visibility_SPACE
+	}
+
+	prepared, err := s.prepareMemoCreate(ctx, user, commentInput, memoUID)
 	if err != nil {
 		return nil, err
 	}

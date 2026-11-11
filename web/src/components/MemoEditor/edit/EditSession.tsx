@@ -7,6 +7,7 @@ import { useSourceMode } from "@/hooks/useSourceMode";
 import { showErrorToast, toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { InstanceSetting_Key } from "@/types/proto/api/instance_service_pb";
+import { Visibility } from "@/types/proto/api/memo_service_pb";
 import { useTranslate } from "@/utils/i18n";
 import { convertVisibilityFromString } from "@/utils/memo";
 
@@ -52,6 +53,7 @@ export const EditSession: React.FC<EditSessionProps> = ({
   parentMemoName,
   suggestions = [],
   defaultSpace,
+  defaultVisibility: explicitDefaultVisibility,
   autoFocus,
   onFocusModeExit,
   onFocusModeChange,
@@ -90,9 +92,9 @@ export const EditSession: React.FC<EditSessionProps> = ({
 
   const memoName = memo?.name;
   const showTimestamp = Boolean(memoName || (!memo && hasTimestamp));
-  // Replies are never placed independently: a comment's Space is its parent's.
-  // An edited top-level memo can change its Space; a new one can unless its
-  // host fixes the target (e.g. composing inside a Space).
+  // Comments never expose a Space chooser; their host can fix the parent
+  // Space. An edited top-level memo can change its Space; a new one can unless
+  // its host fixes the target (e.g. composing inside a Space).
   const draftSpace = useEditorSelector((s) => s.metadata.space);
   const canChooseSpace = canChooseSpaceFor({ memo, currentUser, parentMemoName, defaultSpace });
   const editorSpace = memo ? draftSpace : parentMemoName ? undefined : (defaultSpace ?? draftSpace);
@@ -103,8 +105,14 @@ export const EditSession: React.FC<EditSessionProps> = ({
     return Boolean(provider?.apiKeySet);
   }, [aiSetting.providers, aiSetting.transcription?.providerId]);
 
-  // Get default visibility from user settings
-  const defaultVisibility = userGeneralSetting?.memoVisibility ? convertVisibilityFromString(userGeneralSetting.memoVisibility) : undefined;
+  // Get default visibility: explicit prop wins, then user settings, fallback to SPACE if defaultSpace is present
+  const defaultVisibility =
+    explicitDefaultVisibility ??
+    (defaultSpace
+      ? Visibility.SPACE
+      : userGeneralSetting?.memoVisibility
+        ? convertVisibilityFromString(userGeneralSetting.memoVisibility)
+        : undefined);
 
   // Source mode only changes how the text is edited, so every composer offers it.
   const [editorMode, setEditorMode] = useSourceMode();
@@ -351,7 +359,8 @@ export const EditSession: React.FC<EditSessionProps> = ({
           // positions the Markdown tag in its own corner; a session floating over the page in
           // focus mode always brings its own. The bottom is 16px like the sides: the toolbar's
           // hard edge needs more room than the text's soft top.
-          (!frameless || isFocusMode) && "relative bg-mu-surface px-5 pt-4 pb-4.5 rounded-mu-xl border border-mu-line/80 shadow-mu-key transition-all duration-150 focus-within:border-mu-primary/50 focus-within:shadow-mu-raised",
+          (!frameless || isFocusMode) &&
+            "relative bg-mu-surface px-5 pt-4 pb-4.5 rounded-mu-xl border border-mu-line/80 shadow-mu-key transition-all duration-150 focus-within:border-mu-primary/50 focus-within:shadow-mu-raised",
           isFocusMode && cn(FOCUS_MODE_STYLES.container.base, FOCUS_MODE_STYLES.container.spacing),
           !isFocusMode && className,
         )}

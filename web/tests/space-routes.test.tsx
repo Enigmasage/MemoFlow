@@ -66,9 +66,19 @@ describe("Space route contract", () => {
     expect(getCreatorHomePath("alice")).toBe("/?creator=alice");
     expect(getCreatorHomePath("júlia")).toBe("/?creator=j%C3%BAlia");
   });
+  it("does not inject currentUsername creator when navigating within a Space", () => {
+    // When navigating from a Space home or calendar to another view inside that space,
+    // without an explicit creator filter in the URL, creator should stay unset.
+    expect(collectionNavigationPath("/calendar", { pathname: "/spaces/a", search: "" }, "alice")).toBe("/spaces/a/calendar");
+    expect(collectionNavigationPath("/map", { pathname: "/spaces/a", search: "" }, "alice")).toBe("/spaces/a/map");
+    expect(collectionNavigationPath("/", { pathname: "/spaces/a/calendar", search: "" }, "alice")).toBe("/spaces/a");
+    expect(collectionNavigationPath("/", { pathname: "/spaces/a/calendar", search: "?creator=alice" }, "alice")).toBe(
+      "/spaces/a?creator=alice",
+    );
+  });
   it("keeps personal Home and all-creator Explore distinct while changing views", () => {
     expect(getCreatorSwitchPath({ pathname: "/", search: "?filter=tagSearch%3Awork" })).toBe("/explore?filter=tagSearch%3Awork");
-    expect(getCreatorSwitchPath({ pathname: "/spaces/a/explore", search: "" }, "alice", "alice")).toBe("/spaces/a");
+    expect(getCreatorSwitchPath({ pathname: "/spaces/a/explore", search: "" }, "alice", "alice")).toBe("/spaces/a?creator=alice");
     expect(collectionNavigationPath("/calendar", { pathname: "/", search: "" }, "alice")).toBe("/calendar?creator=alice");
     expect(collectionNavigationPath("/calendar", { pathname: "/explore", search: "" }, "alice")).toBe("/calendar");
     expect(collectionNavigationPath("/", { pathname: "/calendar", search: "" }, "alice")).toBe("/explore");

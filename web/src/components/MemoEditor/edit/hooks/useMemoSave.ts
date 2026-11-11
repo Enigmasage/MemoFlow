@@ -8,7 +8,7 @@ import { userKeys } from "@/hooks/useUserQueries";
 import { handleError } from "@/lib/error";
 import { showErrorToast, toast } from "@/lib/toast";
 import type { Attachment } from "@/types/proto/api/attachment_service_pb";
-import type { Visibility } from "@/types/proto/api/memo_service_pb";
+import { Visibility } from "@/types/proto/api/memo_service_pb";
 import { useTranslate } from "@/utils/i18n";
 import { errorService, memoService, validationService } from "../services";
 import { DrawingNotSavedError, type MemoSaveOperations, mergeUploadedAttachments } from "../services/memoService";
@@ -141,7 +141,9 @@ export function useMemoSave({
       }
 
       dispatch(actions.reset());
-      if (!memoName && defaultVisibility) {
+      if (!memoName && defaultSpace) {
+        dispatch(actions.setMetadata({ space: defaultSpace, visibility: defaultVisibility ?? Visibility.SPACE }));
+      } else if (!memoName && defaultVisibility) {
         dispatch(actions.setMetadata({ visibility: defaultVisibility }));
       }
       // Reset creates a fresh editor state, so restore calendar-derived values

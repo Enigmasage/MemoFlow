@@ -21,8 +21,9 @@ export interface EditSessionProps {
   parentMemoName?: string;
   /** Context-derived suggestions for a new top-level memo. */
   suggestions?: readonly MemoSuggestion[];
-  /** Assigns a newly created top-level memo to this Space. Ignored for edits and comments. */
+  /** Fixes a newly created memo or comment to this Space. Ignored for edits. */
   defaultSpace?: string;
+  defaultVisibility?: Visibility;
   /** A callback can decide whether focus is still appropriate after draft restoration. */
   autoFocus?: boolean | (() => boolean);
   /**

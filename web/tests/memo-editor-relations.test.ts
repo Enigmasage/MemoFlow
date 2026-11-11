@@ -8,6 +8,7 @@ import {
   MemoRelation_Type,
   MemoRelationSchema,
   MemoSchema,
+  Visibility,
 } from "@/types/proto/api/memo_service_pb";
 import { clientSaveOperations as ops } from "./helpers/memo-save-operations";
 
@@ -80,10 +81,10 @@ describe("memo editor relation updates", () => {
     expect(clients.createMemo).toHaveBeenLastCalledWith({ memo: expect.objectContaining({ space: "spaces/current" }) });
   });
 
-  it("does not inherit the selected Space when creating a comment", async () => {
+  it("persists the parent Space audience selected by the comment host", async () => {
     const state = createInitialState();
     state.content = "Reply";
-    state.metadata = { ...state.metadata, space: "spaces/draft" };
+    state.metadata = { ...state.metadata, space: "spaces/product", visibility: Visibility.SPACE };
 
     await memoService.save(state, { parentMemoName: "memos/parent", space: "spaces/product" }, ops);
 
@@ -91,7 +92,8 @@ describe("memo editor relation updates", () => {
     const request = clients.createMemoComment.mock.calls[0][0];
     expect(request.parent).toBe("memos/parent");
     expect(request.comment.content).toBe("Reply");
-    expect(request.comment.space).toBeUndefined();
+    expect(request.comment.space).toBe("spaces/product");
+    expect(request.comment.visibility).toBe(Visibility.SPACE);
   });
 
   it("sends only mutable references when editing a comment", async () => {

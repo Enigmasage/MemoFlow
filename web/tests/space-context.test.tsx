@@ -65,10 +65,10 @@ describe("URL-owned Space context", () => {
     expect(screen.getByTestId("space")).toHaveTextContent("all");
     expect(screen.getByTestId("filter")).toHaveTextContent("all");
   });
-  it("filters Home to the signed-in creator, including inside a Space", () => {
+  it("shows every readable creator on Space Home", () => {
     setup("/spaces/a");
-    expect(screen.getByTestId("filter")).toHaveTextContent('creator == "users/alice"');
     expect(screen.getByTestId("filter")).toHaveTextContent('space == "spaces/a"');
+    expect(screen.getByTestId("filter")).not.toHaveTextContent("creator ==");
   });
   it("keeps Space Explore across all readable creators", () => {
     setup("/spaces/a/explore");
@@ -81,6 +81,11 @@ describe("URL-owned Space context", () => {
     expect(screen.getByTestId("filter")).toHaveTextContent('creator == "users/bob"');
     fireEvent.click(screen.getByText("B"));
     expect(screen.getByTestId("path")).toHaveTextContent("/spaces/b?creator=bob");
+  });
+  it("keeps the current user explicit when filtering a Space to that creator", () => {
+    setup("/spaces/a?creator=alice");
+    expect(screen.getByTestId("filter")).toHaveTextContent('space == "spaces/a"');
+    expect(screen.getByTestId("filter")).toHaveTextContent('creator == "users/alice"');
   });
   it("restores Space from a deep link before metadata has loaded", () => {
     state.ready = false;

@@ -174,7 +174,9 @@ export const memoService = {
       location: state.metadata.location,
       createTime: state.timestamps.createTime ? timestampFromDate(state.timestamps.createTime) : undefined,
       updateTime: state.timestamps.updateTime ? timestampFromDate(state.timestamps.updateTime) : undefined,
-      space: options.parentMemoName ? undefined : (options.space ?? state.metadata.space),
+      // A comment is persisted as its own memo row. Its host may fix the
+      // parent Space so the comment receives the same durable access scope.
+      space: options.space ?? state.metadata.space,
     });
 
     const memo = await operations.createMemo(memoData, options.parentMemoName);

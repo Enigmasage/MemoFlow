@@ -34,7 +34,9 @@ describe("icon sizes", () => {
   it("leaves Lucide's stroke to the package instead of setting it by hand", () => {
     // Drawn artwork (illustrations, the avatar fallback, the title's slash) sets its own strokes.
     const allowed = ["components/Placeholder/InkIllustration.tsx", "components/UserAvatar.tsx", "components/AppSidebar/SpaceSwitcher.tsx"];
-    const offenders = files.filter(({ path, text }) => /\bstrokeWidth=/.test(text) && !allowed.includes(path)).map(({ path }) => path);
+    const offenders = files
+      .filter(({ path, text }) => /\bstrokeWidth=/.test(text) && !allowed.includes(path.replace(/\\/g, "/")))
+      .map(({ path }) => path);
     expect(offenders).toEqual([]);
   });
 
