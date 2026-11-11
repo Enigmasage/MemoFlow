@@ -1,0 +1,14 @@
+{
+  "name": "MemoFlow",
+  "short_name": "MemoFlow",
+  "description": "MemoFlow is a modern, visually engaging note-taking and knowledge-management platform that brings your everyday thoughts together into a seamless flow. Your data stays yours, and you choose what to keep private or share.",
+  "icons": [
+    { "src": "/android-chrome-192x192.png?v=celadon", "sizes": "192x192", "type": "image/png" },
+    { "src": "/android-chrome-512x512.png?v=celadon", "sizes": "512x512", "type": "image/png" }
+  ],
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "theme_color": "#faf8f5",
+  "background_color": "#faf8f5"
+}

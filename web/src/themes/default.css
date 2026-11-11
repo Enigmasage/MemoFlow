@@ -1,0 +1,87 @@
+/*
+ * MemoFlow modern theme system on top of @usememos/ui.
+ * Moves away from harsh pure black/white into a premium, warm, and expressive experience.
+ */
+
+@layer mu {
+  :where(:root, :host, .mu-root:not([data-theme] *)),
+  [data-theme="light"] {
+    color-scheme: light;
+    /* Light Mode - MemoFlow Warm Ivory & Violet Palette */
+    --mu-canvas: #faf8f5;
+    --mu-surface: #ffffff;
+    --mu-well: #f0ece5;
+    --mu-hover: #f3efe8;
+    --mu-key: #ffffff;
+    --mu-key-hover: #f7f4ee;
+    --mu-key-sheen: rgba(255, 255, 255, 0.6);
+    --mu-edge: #d8d3c8;
+    --mu-line: #e6e1d7;
+    --mu-overlay: rgba(30, 26, 36, 0.38);
+    --mu-ink: #1f1e24;
+    --mu-ink-muted: #6b6777;
+    --mu-primary: #5c4ee5;
+    --mu-primary-hover: #4b3dc9;
+    --mu-on-primary: #ffffff;
+    --mu-accent: #5c4ee5;
+    --mu-selection: rgba(92, 78, 229, 0.16);
+    --mu-success: #0e9f8f;
+    --mu-success-soft: #e5f7f4;
+    --mu-warning: #e26d56;
+    --mu-warning-soft: #fdf0ec;
+    --mu-danger: #e13b48;
+    --mu-danger-key: #d32f3f;
+    --mu-danger-soft: #feebee;
+    --mu-on-danger: #ffffff;
+    --mu-focus: var(--mu-primary);
+    --mu-focus-edge: var(--mu-ink);
+    --mu-shadow-track: inset 0 1px 2px rgba(35, 30, 20, 0.05);
+    --mu-shadow-key: 0 1px 2px rgba(35, 30, 20, 0.06), 0 2px 4px rgba(35, 30, 20, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    --mu-shadow-raised: 0 1px 3px rgba(35, 30, 20, 0.08), 0 3px 8px rgba(35, 30, 20, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    --mu-shadow-pressed: inset 0 1px 3px rgba(35, 30, 20, 0.12);
+    --mu-shadow-pop: 0 12px 32px rgba(35, 30, 20, 0.1), 0 2px 6px rgba(35, 30, 20, 0.06), 0 0 0 1px rgba(35, 30, 20, 0.05);
+  }
+
+  [data-theme="dark"] {
+    color-scheme: dark;
+    /* Dark Mode - MemoFlow Midnight Charcoal & Lavender Palette */
+    --mu-canvas: #121217;
+    --mu-surface: #1b1a23;
+    --mu-well: #23222f;
+    --mu-hover: #272635;
+    --mu-key: #2a2939;
+    --mu-key-hover: #323144;
+    --mu-key-sheen: rgba(255, 255, 255, 0.07);
+    --mu-edge: #343346;
+    --mu-line: #282738;
+    --mu-overlay: rgba(8, 8, 12, 0.72);
+    --mu-ink: #f3f2f8;
+    --mu-ink-muted: #9995ad;
+    --mu-primary: #9485ff;
+    --mu-primary-hover: #ab9eff;
+    --mu-on-primary: #0e0d16;
+    --mu-accent: #9485ff;
+    --mu-selection: rgba(148, 133, 255, 0.26);
+    --mu-success: #2dd4bf;
+    --mu-success-soft: #122b27;
+    --mu-warning: #fb923c;
+    --mu-warning-soft: #301d16;
+    --mu-danger: #f87171;
+    --mu-danger-key: #e05252;
+    --mu-danger-soft: #2e1717;
+    --mu-on-danger: #ffffff;
+    --mu-focus: var(--mu-primary);
+    --mu-focus-edge: var(--mu-ink);
+    --mu-shadow-track: inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -0.5px 0 rgba(255, 255, 255, 0.05);
+    --mu-shadow-key: 0 1px 2px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    --mu-shadow-raised: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    --mu-shadow-pressed: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+    --mu-shadow-pop: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  }
+}
+
+@theme inline {
+  --font-sans: "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-serif: "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}

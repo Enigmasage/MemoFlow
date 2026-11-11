@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="MemoFlow">
+  <defs>
+    <linearGradient id="flowmark-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7364f7" />
+      <stop offset="100%" stop-color="#4e3edf" />
+    </linearGradient>
+  </defs>
+  <path fill="url(#flowmark-gradient)" fill-rule="evenodd" d="M128 64 C88 64 56 96 56 136 L56 376 C56 416 88 448 128 448 L384 448 C424 448 456 416 456 376 L456 208 L304 56 L128 64 Z M116 144 C116 128 128 116 144 116 L264 116 L264 196 C264 218 282 236 304 236 L384 236 L384 368 C384 384 372 396 356 396 L144 396 C128 396 116 384 116 368 L116 144 Z M324 176 L324 112 L388 176 L324 176 Z M140 308 C140 288 156 272 176 272 C204 272 226 244 256 244 C286 244 308 272 336 272 C356 272 372 288 372 308 C372 328 356 344 336 344 C292 344 276 304 256 304 C236 304 220 344 176 344 C156 344 140 328 140 308 Z"/>
+</svg>
